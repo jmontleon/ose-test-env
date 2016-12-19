@@ -1,0 +1,23 @@
+[OSEv3:children]
+masters
+nodes
+#etcd
+#lb
+
+# Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+ansible_ssh_user=root
+deployment_type=origin
+http_pass_file=/etc/httpd/passwd
+openshift_master_default_subdomain=ose.example.com
+
+[masters]
+ose-master.example.com
+
+#[etcd]
+#ose-master.example.com
+
+[nodes]
+ose-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_schedulable=true
+ose-node.example.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+

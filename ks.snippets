@@ -1,0 +1,38 @@
+%packages
+wget
+git
+net-tools
+bind-utils
+iptables-services
+bridge-utils
+bash-completion
+pyOpenSSL
+docker
+ansible
+PyYAML
+yum-utils
+NetworkManager
+bash-completion
+ipa-admintools
+
+
+%post
+lvremove docker-vg docker-pool -y
+dd if=/dev/zero of=/dev/vdb bs=1024 count=256000
+cat <<EOF > /etc/sysconfig/docker-storage-setup
+DEVS=/dev/vdb
+VG=docker-vg
+WIPE_SIGNATURES=true
+EOF
+docker-storage-setup --reset
+docker-storage-setup
+sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' /etc/sysconfig/docker
+systemctl enable docker
+systemctl enable NetworkManager
+
+#Make sure at least this is done after any yum update in %post if you want to have selinux enabled.
+#https://bugzilla.redhat.com/show_bug.cgi?id=1405888
+yum -y reinstall container-selinux
+echo "Dec 18 05:42:23 ose-master.example.com kernel: type=1400 audit(1482039743.424:58): avc:  denied  { transition } for  pid=39299 comm="exe" path="/pod" dev="dm-5" ino=1030 scontext=system_u:system_r:unconfined_service_t:s0 tcontext=system_u:system_r:svirt_lxc_net_t:s0:c0,c1 tclass=process" > /root/docker_custom.log
+audit2allow -M docker_custom < /root/docker_custom.log
+semodule -i docker_custom.pp
